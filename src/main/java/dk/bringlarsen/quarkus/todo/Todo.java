@@ -6,6 +6,10 @@ public class Todo {
     private String title;
     private boolean completed;
 
+    public Todo(String title) {
+        this(0L, title, false);
+    }
+
     public Todo(Long id, String title, boolean completed) {
         this.id = id;
         this.title = title;

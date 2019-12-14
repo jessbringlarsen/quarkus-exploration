@@ -23,6 +23,9 @@ public class TodoResource {
 
     @GET
     public Response all(@QueryParam("pageIndex") int pageIndex, @QueryParam("pageSize") int pageSize) {
+        if(pageSize == 0) {
+            pageSize = 10;
+        }
         return Response.ok().entity(repository.findAll(pageIndex, pageSize)).status(200).build();
     }
 
@@ -38,11 +41,20 @@ public class TodoResource {
 
     @POST
     public Response create(TodoInputModel todo) {
-        Optional<Todo> result = repository.create(new Todo(0L, todo.title, false));
+        Optional<Todo> result = repository.create(new Todo(todo.title));
         if(!result.isPresent()) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
         return Response.status(Response.Status.CREATED).entity(result.get()).build();
     }
 
+    @DELETE
+    @Path("/{id}")
+    public Response delete(@PathParam("id") long id) {
+        boolean deleted = repository.delete(id);
+        if(!deleted) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
 }

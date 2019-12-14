@@ -10,4 +10,6 @@ public interface TodoRepository {
     Optional<Todo> findById(long id);
 
     Optional<Todo> create(Todo todo);
+
+    boolean delete(long id);
 }
