@@ -21,7 +21,7 @@ public class DawaClientTest {
     public void testDawaClient() {
         List<DawaAddress> addresses = dawaClient.lookupAddress("Mosesvinget 28");
 
-        Assertions.assertEquals("Mosesvinget 28, 2400 København NV", addresses.get(0).tekst);
+        Assertions.assertEquals("Mosesvinget 28, 2400 København NV", addresses.get(0).forslagstekst);
         Assertions.assertEquals("2400", addresses.get(0).data.postnr);
 
     }

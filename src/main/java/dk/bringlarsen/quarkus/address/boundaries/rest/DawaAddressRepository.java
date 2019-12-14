@@ -28,7 +28,7 @@ public class DawaAddressRepository implements AddressRepository {
         }
 
         return result.stream()
-                .map(a -> new Address(a.data.vejnavn, a.data.postnr))
+                .map(a -> new Address(a.forslagstekst, a.data.vejnavn, a.data.husnr, a.data.postnr))
                 .collect(Collectors.toList());
     }
 }
