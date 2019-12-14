@@ -3,14 +3,7 @@ package dk.bringlarsen.quarkus.todo.boundaries.web;
 import java.util.Optional;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.MediaType;
@@ -19,7 +12,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import dk.bringlarsen.quarkus.todo.Page;
+import dk.bringlarsen.quarkus.todo.PageableResult;
 import dk.bringlarsen.quarkus.todo.Todo;
 import dk.bringlarsen.quarkus.todo.TodoRepository;
 
@@ -41,29 +34,27 @@ public class TodoResource {
             pageSize = 10;
         }
         
-        Page page = repository.findAll(pageIndex, pageSize);
+        PageableResult pageableResult = repository.findAll(pageIndex, pageSize);
         ResponseBuilder responseBuilder = Response.ok()
             .status(200)    
-            .entity(page.getTodos())
+            .entity(pageableResult.getResult())
             .links(Link.fromUri(uriInfo.getRequestUri()).rel("self").build());
         
-        if(page.hasPrevious()) {
-            UriBuilder uri = uriInfo.getAbsolutePathBuilder();
-            uri.queryParam("pageIndex", pageIndex-1);
-            uri.queryParam("pageSize", pageSize);
-            Link link = Link.fromUri(uri.build()).rel("prev").build();
-            responseBuilder.links(link);
+        if(pageableResult.hasPrevious()) {
+            responseBuilder.links(getNavigationLink(uriInfo, "prev", pageIndex-1, pageSize));
         }
 
-        if(page.hasNext()) {
-            UriBuilder uri = uriInfo.getAbsolutePathBuilder();
-            uri.queryParam("pageIndex", pageIndex+1);
-            uri.queryParam("pageSize", pageSize);
-            Link link = Link.fromUri(uri.build()).rel("next").build();
-            responseBuilder.links(link);
+        if(pageableResult.hasNext()) {
+            responseBuilder.links(getNavigationLink(uriInfo, "next", pageIndex+1, pageSize));
         }
-
         return responseBuilder.build();
+    }
+
+    private Link getNavigationLink(UriInfo uriInfo, String rel, int pageIndex, int pageSize) {
+        UriBuilder uri = uriInfo.getAbsolutePathBuilder();
+        uri.queryParam("pageIndex", pageIndex);
+        uri.queryParam("pageSize", pageSize);
+        return Link.fromUri(uri.build()).rel(rel).build();
     }
 
     @GET
@@ -83,6 +74,16 @@ public class TodoResource {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
         return Response.status(Response.Status.CREATED).entity(result.get()).build();
+    }
+
+    @PATCH
+    @Path("/{id}")
+    public Response patch(@PathParam("id") long id, TodoInputModel todo) {
+        Optional<Todo> result = repository.save(new Todo(id, todo.title, false, 0));
+        if(!result.isPresent()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.status(Response.Status.OK).entity(result.get()).build();
     }
 
     @DELETE

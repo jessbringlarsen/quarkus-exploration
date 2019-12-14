@@ -2,16 +2,16 @@ package dk.bringlarsen.quarkus.todo;
 
 import java.util.List;
 
-public class Page {
+public class PageableResult<T> {
 
     private boolean hasPrevious;
     private boolean hasNext;
-    private List<Todo> todos;
+    private List<T> result;
 
-    public Page(boolean hasPrevious, boolean hasNext, List<Todo> todos) {
+    public PageableResult(boolean hasPrevious, boolean hasNext, List<T> result) {
         this.hasPrevious = hasPrevious;
         this.hasNext = hasNext;
-        this.todos = todos;
+        this.result = result;
     }
 
     public boolean hasPrevious() {
@@ -22,7 +22,7 @@ public class Page {
         return hasNext;
     }
 
-    public List<Todo> getTodos() {
-        return todos;
+    public List<T> getResult() {
+        return result;
     }
 }
