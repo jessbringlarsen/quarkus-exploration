@@ -7,7 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.transaction.Transactional;
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -23,12 +23,14 @@ public class TodoJpaRepository implements dk.bringlarsen.quarkus.todo.TodoReposi
     }
 
     @Override
-    public Collection<Todo> findAll(int pageIndex, int pageSize) {
+    public dk.bringlarsen.quarkus.todo.Page findAll(int pageIndex, int pageSize) {
         PageRequest page = PageRequest.of(pageIndex, pageSize);
         Page<TodoEntity> result = repository.findAll(page);
-        return result.get()
-                .map(this::map)
-                .collect(Collectors.toList());
+
+        List<Todo> todos = result.get()
+            .map(this::map)
+            .collect(Collectors.toList());
+        return new dk.bringlarsen.quarkus.todo.Page(result.hasPrevious(), result.hasNext(), todos); 
     }
 
     @Override

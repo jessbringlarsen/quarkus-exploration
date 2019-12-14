@@ -7,3 +7,4 @@ create table todo
 
 insert into todo (title, completed) values ('todo 1', 0);
 insert into todo (title, completed) values ('todo 2', 0);
+insert into todo (title, completed) values ('todo 3', 0);

@@ -1,13 +1,27 @@
 package dk.bringlarsen.quarkus.todo.boundaries.web;
 
-import dk.bringlarsen.quarkus.todo.Todo;
-import dk.bringlarsen.quarkus.todo.TodoRepository;
+import java.util.Optional;
 
 import javax.inject.Inject;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Link;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Optional;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Response.ResponseBuilder;
+
+import dk.bringlarsen.quarkus.todo.Page;
+import dk.bringlarsen.quarkus.todo.Todo;
+import dk.bringlarsen.quarkus.todo.TodoRepository;
 
 @Path("/todos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -22,11 +36,34 @@ public class TodoResource {
     }
 
     @GET
-    public Response all(@QueryParam("pageIndex") int pageIndex, @QueryParam("pageSize") int pageSize) {
+    public Response all(@QueryParam("pageIndex") int pageIndex, @QueryParam("pageSize") int pageSize, @Context UriInfo uriInfo) {
         if(pageSize == 0) {
             pageSize = 10;
         }
-        return Response.ok().entity(repository.findAll(pageIndex, pageSize)).status(200).build();
+        
+        Page page = repository.findAll(pageIndex, pageSize);
+        ResponseBuilder responseBuilder = Response.ok()
+            .status(200)    
+            .entity(page.getTodos())
+            .links(Link.fromUri(uriInfo.getRequestUri()).rel("self").build());
+        
+        if(page.hasPrevious()) {
+            UriBuilder uri = uriInfo.getAbsolutePathBuilder();
+            uri.queryParam("pageIndex", pageIndex-1);
+            uri.queryParam("pageSize", pageSize);
+            Link link = Link.fromUri(uri.build()).rel("prev").build();
+            responseBuilder.links(link);
+        }
+
+        if(page.hasNext()) {
+            UriBuilder uri = uriInfo.getAbsolutePathBuilder();
+            uri.queryParam("pageIndex", pageIndex+1);
+            uri.queryParam("pageSize", pageSize);
+            Link link = Link.fromUri(uri.build()).rel("next").build();
+            responseBuilder.links(link);
+        }
+
+        return responseBuilder.build();
     }
 
     @GET
