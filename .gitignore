@@ -1,3 +1,9 @@
+# Intellij Idea
 .idea/
 *.iml
 target/
+
+# VSCode
+.settings/
+.project
+.classpath
