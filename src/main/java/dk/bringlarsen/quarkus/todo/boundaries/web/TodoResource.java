@@ -1,13 +1,20 @@
 package dk.bringlarsen.quarkus.todo.boundaries.web;
 
-import dk.bringlarsen.quarkus.todo.Todo;
-import dk.bringlarsen.quarkus.todo.TodoRepository;
+import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Link;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Optional;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Response.ResponseBuilder;
+
+import dk.bringlarsen.quarkus.todo.PageableResult;
+import dk.bringlarsen.quarkus.todo.Todo;
+import dk.bringlarsen.quarkus.todo.TodoRepository;
 
 @Path("/todos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -22,11 +29,32 @@ public class TodoResource {
     }
 
     @GET
-    public Response all(@QueryParam("pageIndex") int pageIndex, @QueryParam("pageSize") int pageSize) {
+    public Response all(@QueryParam("pageIndex") int pageIndex, @QueryParam("pageSize") int pageSize, @Context UriInfo uriInfo) {
         if(pageSize == 0) {
             pageSize = 10;
         }
-        return Response.ok().entity(repository.findAll(pageIndex, pageSize)).status(200).build();
+        
+        PageableResult pageableResult = repository.findAll(pageIndex, pageSize);
+        ResponseBuilder responseBuilder = Response.ok()
+            .status(200)    
+            .entity(pageableResult.getResult())
+            .links(Link.fromUri(uriInfo.getRequestUri()).rel("self").build());
+        
+        if(pageableResult.hasPrevious()) {
+            responseBuilder.links(getNavigationLink(uriInfo, "prev", pageIndex-1, pageSize));
+        }
+
+        if(pageableResult.hasNext()) {
+            responseBuilder.links(getNavigationLink(uriInfo, "next", pageIndex+1, pageSize));
+        }
+        return responseBuilder.build();
+    }
+
+    private Link getNavigationLink(UriInfo uriInfo, String rel, int pageIndex, int pageSize) {
+        UriBuilder uri = uriInfo.getAbsolutePathBuilder();
+        uri.queryParam("pageIndex", pageIndex);
+        uri.queryParam("pageSize", pageSize);
+        return Link.fromUri(uri.build()).rel(rel).build();
     }
 
     @GET
@@ -46,6 +74,16 @@ public class TodoResource {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
         return Response.status(Response.Status.CREATED).entity(result.get()).build();
+    }
+
+    @PATCH
+    @Path("/{id}")
+    public Response patch(@PathParam("id") long id, TodoInputModel todo) {
+        Optional<Todo> result = repository.save(new Todo(id, todo.title, false, 0));
+        if(!result.isPresent()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.status(Response.Status.OK).entity(result.get()).build();
     }
 
     @DELETE
